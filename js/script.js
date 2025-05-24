@@ -108,35 +108,28 @@ const renderMobileCardsForModes = (modes) => {
     .map((token) => `
       <div class="token-card">
         <div class="token-name">${token.tokenName}</div>
-        ${token.description ? `<div class="token-description">${token.description}</div>` : ''}
-        <div class="token-values">
-          ${modeNames
-            .map((mode) => {
-              const modeValue = modes[mode].find(
-                (m) => m.tokenName === token.tokenName
-              );
-              return `
-              <div class="token-value">
-                <span class="mode-name">${mode}</span>: 
-                ${
-                  token.tokenType === 'color' && modeValue && isColor(sanitizeColor(modeValue.hex))
-                    ? `<span class="color-circle" data-token="${token.tokenName}" style="--color: ${sanitizeColor(modeValue.hex)};"></span>`
-                    : ''
-                }
-                ${
-                  modeValue?.isVariable
-                    ? `<div class="value-rectangle">
-      ${modeValue.value}<button class="copy-btn" data-token="${modeValue.value}" title="Copy">📋</button>
-    </div>
-    ${token.description ? `<div class="token-description">${token.description}</div>` : ''}`
-                    : modeValue?.value || '-'
-                }
-              </div>`;
-            })
-            .join('')}
-        </div>
+        ${modeNames
+          .map((mode) => {
+            const modeValue = modes[mode].find((m) => m.tokenName === token.tokenName);
+            return `
+        <div class="mode-name">${mode}</div>
+        ${
+          token.tokenType === 'color' && modeValue && isColor(sanitizeColor(modeValue.hex))
+            ? `<div><span class="color-circle" data-token="${token.tokenName}" style="--color: ${sanitizeColor(modeValue.hex)};"></span></div>`
+            : ''
+        }
+        ${
+          modeValue?.isVariable
+            ? `<div class="value-rectangle">${modeValue.value}<button class="copy-btn" data-token="${modeValue.value}" title="Copy">📋</button></div>`
+            : `<div class="value">${modeValue?.value || '-'}</div>`
+        }
+        ${modeValue?.description ? `<div class="token-description">${modeValue.description}</div>` : ''}
+            `;
+          })
+          .join('')}
       </div>
-    `)
+    `
+    )
     .join('');
 };
 
@@ -174,18 +167,18 @@ const renderModeTable = (modes) => {
     <table class="token-table">
       <thead>
         <tr>
-          <th style="width: ${100 / (modeNames.length + 1)}%;">Token</th>
+          <th style="vertical-align: top; width: ${100 / (modeNames.length + 1)}%;">Token</th>
           ${modeNames
             .map(
               (mode) =>
-                `<th style="width: ${100 / (modeNames.length + 1)}%;">${mode}</th>`
+                `<th style="vertical-align: top; width: ${100 / (modeNames.length + 1)}%;">${mode}</th>`
             )
             .join('')}
         </tr>
       </thead>
       <tbody>
         <tr class="table-divider">
-          <td colspan="${modeNames.length + 1}"></td>
+          <td colspan="${modeNames.length + 1}" style="vertical-align: top;"></td>
         </tr>
         ${renderTableRows(modes, modeNames)}
       </tbody>
@@ -219,7 +212,7 @@ const renderTableRows = (modes, modeNames) => {
                 (m) => m.tokenName === token.tokenName
               );
               return `
-              <td>
+              <td style="vertical-align: top;">
                 ${
                   token.tokenType === 'color' && modeValue && isColor(sanitizeColor(modeValue.hex))
                     ? `<span class="color-circle" data-token="${token.tokenName}" style="--color: ${sanitizeColor(modeValue.hex)};"></span>`
@@ -230,7 +223,7 @@ const renderTableRows = (modes, modeNames) => {
                     ? `<div class="value-rectangle">
       ${modeValue.value}<button class="copy-btn" data-token="${modeValue.value}" title="Copy">📋</button>
     </div>
-    ${token.description ? `<div class="token-description">${token.description}</div>` : ''}`
+    ${modeValue.description ? `<div class="token-description">${modeValue.description}</div>` : ''}`
                     : modeValue?.value || '-'
                 }
               </td>`;
@@ -248,8 +241,7 @@ const isColor = (value) => /^#[0-9a-fA-F]{6,8}$/.test(value);
 // Sanitize hex colors: treat NaNNaNNaNNaN as distinct striped background
 const sanitizeColor = (value) => {
   if (value && value.includes('NaN')) {
-    return 'repeating-linear-gradient(45deg, #f0f0f0 0 5px, #ccc 5px 10px)'; 
-    // visibly distinct striped background
+    return '#00000000';
   }
   return value;
 };
