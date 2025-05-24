@@ -3,7 +3,7 @@
  * Plugin Name: Figma Variables
  * Plugin URI:  https://coindesign.ir
  * Description: Display JSON data as styled documentation with an accordion layout.
- * Version:     5.3
+ * Version:     6.0
  * Author:      Dariush Habibpour
  * Author URI:  https://coindesign.ir
  */

@@ -39,6 +39,7 @@ const groupTokensByTable = (data) => {
             value: token.var || token.value,
             hex: token.value, // Only relevant for color tokens
             isVariable: !!token.var, // Check if the value is a variable
+            description: token.description || '', // Add description property
           });
         });
       });
@@ -98,13 +99,16 @@ const renderMobileCardsForModes = (modes) => {
   const modeNames = Object.keys(modes);
   const allTokens = Object.values(modes).flat();
   const uniqueTokens = [
-    ...new Map(allTokens.map((item) => [item.tokenName, item])).values(),
+    ...new Map(
+      allTokens.map((item) => [item.tokenName, item])
+    ).values(),
   ];
 
   return uniqueTokens
     .map((token) => `
       <div class="token-card">
         <div class="token-name">${token.tokenName}</div>
+        ${token.description ? `<div class="token-description">${token.description}</div>` : ''}
         <div class="token-values">
           ${modeNames
             .map((mode) => {
@@ -116,12 +120,15 @@ const renderMobileCardsForModes = (modes) => {
                 <span class="mode-name">${mode}</span>: 
                 ${
                   token.tokenType === 'color' && modeValue && isColor(sanitizeColor(modeValue.hex))
-                    ? `<span class="color-circle" style="--color: ${sanitizeColor(modeValue.hex)};"></span>`
+                    ? `<span class="color-circle" data-token="${token.tokenName}" style="--color: ${sanitizeColor(modeValue.hex)};"></span>`
                     : ''
                 }
                 ${
                   modeValue?.isVariable
-                    ? `<span class="value-rectangle">${modeValue.value}<button class="copy-btn" data-token="${modeValue.value}" title="Copy">📋</button></span>`
+                    ? `<div class="value-rectangle">
+      ${modeValue.value}<button class="copy-btn" data-token="${modeValue.value}" title="Copy">📋</button>
+    </div>
+    ${token.description ? `<div class="token-description">${token.description}</div>` : ''}`
                     : modeValue?.value || '-'
                 }
               </div>`;
@@ -177,6 +184,9 @@ const renderModeTable = (modes) => {
         </tr>
       </thead>
       <tbody>
+        <tr class="table-divider">
+          <td colspan="${modeNames.length + 1}"></td>
+        </tr>
         ${renderTableRows(modes, modeNames)}
       </tbody>
     </table>
@@ -187,14 +197,20 @@ const renderModeTable = (modes) => {
 const renderTableRows = (modes, modeNames) => {
   const allTokens = Object.values(modes).flat();
   const uniqueTokens = [
-    ...new Map(allTokens.map((item) => [item.tokenName, item])).values(),
+    ...new Map(
+      allTokens.map((item) => [item.tokenName, item])
+    ).values(),
   ];
 
   return uniqueTokens
     .map((token) => `
       <tr>
         <td>
-          <span class="token-name-text value-rectangle">${token.tokenName}<button class="copy-btn" data-token="${token.tokenName}" title="Copy">📋</button></span>
+          <span class="token-name-text value-rectangle">
+            ${token.tokenName}
+            ${token.description ? `<div class="token-description-inline">${token.description}</div>` : ''}
+            <button class="copy-btn" data-token="${token.tokenName}" title="Copy">📋</button>
+          </span>
         </td>
         ${modeNames
           .map(
@@ -206,12 +222,15 @@ const renderTableRows = (modes, modeNames) => {
               <td>
                 ${
                   token.tokenType === 'color' && modeValue && isColor(sanitizeColor(modeValue.hex))
-                    ? `<span class="color-circle" style="--color: ${sanitizeColor(modeValue.hex)};"></span>`
+                    ? `<span class="color-circle" data-token="${token.tokenName}" style="--color: ${sanitizeColor(modeValue.hex)};"></span>`
                     : ''
                 }
                 ${
                   modeValue?.isVariable
-                    ? `<span class="value-rectangle">${modeValue.value}<button class="copy-btn" data-token="${modeValue.value}" title="Copy">📋</button></span>`
+                    ? `<div class="value-rectangle">
+      ${modeValue.value}<button class="copy-btn" data-token="${modeValue.value}" title="Copy">📋</button>
+    </div>
+    ${token.description ? `<div class="token-description">${token.description}</div>` : ''}`
                     : modeValue?.value || '-'
                 }
               </td>`;
@@ -226,10 +245,11 @@ const renderTableRows = (modes, modeNames) => {
 // Helper function to determine if a string is a valid color
 const isColor = (value) => /^#[0-9a-fA-F]{6,8}$/.test(value);
 
-// Sanitize hex colors: treat NaNNaNNaNNaN as transparent white
+// Sanitize hex colors: treat NaNNaNNaNNaN as distinct striped background
 const sanitizeColor = (value) => {
   if (value && value.includes('NaN')) {
-    return '#ffffff00';
+    return 'repeating-linear-gradient(45deg, #f0f0f0 0 5px, #ccc 5px 10px)'; 
+    // visibly distinct striped background
   }
   return value;
 };
@@ -239,11 +259,25 @@ const setupCopyButtons = () => {
     btn.addEventListener('click', () => {
       const token = btn.getAttribute('data-token');
       navigator.clipboard.writeText(token).then(() => {
-        btn.textContent = '✅';
+        btn.textContent = '📋';
         setTimeout(() => {
-          btn.textContent = '📋';
+          btn.textContent = '✅';
         }, 1000);
       });
+    });
+  });
+
+  document.querySelectorAll('.color-circle').forEach((circle) => {
+    circle.addEventListener('click', () => {
+      const token = circle.getAttribute('data-token');
+      if (token) {
+        navigator.clipboard.writeText(token).then(() => {
+          circle.classList.add('copied');
+          setTimeout(() => {
+            circle.classList.remove('copied');
+          }, 1000);
+        });
+      }
     });
   });
 };
